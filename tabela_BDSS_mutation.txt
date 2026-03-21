@@ -1,0 +1,2 @@
+index	R_nought_1	R_nought_2	tr_11	tr_22	tr_12	tr_21	removal_rate	sampling_proba	infectious_time	tree_size	proportion_t22_t11	fraction_1
+0	1.177	2.116	0.232	0.417	0.005	0	0.197	1	5.079	15	1.798	1
