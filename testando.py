@@ -3,6 +3,8 @@ import sys
 import pandas as pd
 import numpy as np
 import phy
+import phy_autoral
+
 
 #t = Tree( "((H:0.3,I:0.1):0.5, A:1, (B:0.4,(C:0.5,(J:1.3, (F:1.2, D:0.1):0.5):0.5):0.5):0.5);" )
 #print(t)
@@ -34,7 +36,7 @@ def inorder_traversal(node):
     # if more than two children → not binary
     raise ValueError("Tree is not binary. Resolve polytomies first.")
 
-tr = Tree("testando_formato_after.nw", format=1)
+
 
 
 
@@ -51,7 +53,7 @@ tr = Tree("testando_formato_after.nw", format=1)
 #chamando o nome do no
 #print(tr.search_nodes(name="n503")[0].name)
 
-data = np.load('C:\\Users\\JPC\Documents\\MESTRADO\\Projeto\\gillespie-2\\mutation_deep_learning.npz',allow_pickle=True)
+#data = np.load('C:\\Users\\JPC\Documents\\MESTRADO\\Projeto\\gillespie-2\\mutation_deep_learning.npz',allow_pickle=True)
 
 #print(data['tree_data'][0])
 
@@ -121,8 +123,8 @@ print('Esses são os nós internos da árvore:')
       
 
 
-node1 = tr&"n24"
-node2 = tr&"n14"
+#node1 = tr&"n24"
+#node2 = tr&"n14"
 
 
 
@@ -137,17 +139,30 @@ node2 = tr&"n14"
 
 
 #18/3
-# Testar o encode_into_most_recent() e para árvore laderizada e não laderizada, e ver se a propria função ja laderaliza
-# Esperamos q a função laderalize, e q tenha o msm output
-# mudar o parametro do ladderize direction = 1 para 0
-# procurar onde tem a função ladderize() no codigo deles
-# talvez o encode_esteja puxando a árvore nao podada, porque nao foi copiado hard 
+# Testar o encode_into_most_recent() e para árvore laderizada e não laderizada, e ver se a propria função ja laderaliza - OK, a função laderaliza, e nao importa a direção do input
+# Esperamos q a função laderalize, e q tenha o msm output - OK
+# mudar o parametro do ladderize direction = 1 para 0 - OK
+# procurar onde tem a função ladderize() no codigo deles - ok?
+# talvez o encode_esteja puxando a árvore nao podada, porque nao foi copiado hard - O problema é que ele estava nomeando uma árvore ja nomeada pela função name_tree
 # trabalhar com a função de encode dentro desse arquivo, q pode 
 # pq eu estou passando a arvore sem os nomes do nós? já que a função atribui para nós nao nomeados
 
 
-tr.ladderize(direction=0)
-tuple_tree, _ = phy.encode_into_most_recent(tr, 1)
+tr = Tree("testando_formato_before.nw", format=1)
+print('-'*30)
 
-for node in tr.traverse():
-    print(node.features)
+#for node in tr.traverse():
+#    print(node.name)
+
+print(tr)
+tuple_tree1, _ = phy_autoral.encode_into_most_recent(tr, 1)
+
+
+tr = Tree("testando_formato_before.nw", format=1)
+print('-'*30)
+tr.ladderize(direction=0)
+print(tr)
+tuple_tree0, _ = phy_autoral.encode_into_most_recent(tr, 1)
+
+
+print(tuple_tree1.equals(tuple_tree0))

@@ -416,9 +416,10 @@ for experiment_id in range(nb_samples):
 
     # salvar o gráfico laderalizado antes de poda
     
-    tr.ladderize(direction=1)
+    
 
     tr.write(outfile="testando_formato_before.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
+    tr.ladderize(direction=1)
     
 
     with open("tree_before_removal.txt", "w") as file:
@@ -436,7 +437,7 @@ for experiment_id in range(nb_samples):
 
     # salvar o gráfico laderalizado depois da poda
     tr.ladderize(direction=1)
-    tr.write(outfile="testando_formato_after.nw", format=3) #, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
+    tr.write(outfile="testando_formato_after.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
 
 
     with open("tree_after_removal.txt", "w") as file:
