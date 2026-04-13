@@ -9,6 +9,7 @@ import numpy as np
 from sklearn import metrics
 import phy
 from ete3 import Tree
+import ete3
 
 sys.setrecursionlimit(100000)
 
@@ -386,6 +387,22 @@ def remove_certain_leaves(tre, to_remove=lambda node: False, state_feature=STOP_
     return tre
 
 
+    
+
+def ordering_internal_nodes(leaf_list_encode):
+    # Retorna uma lista dos nós internos na ordem em que estão disposto no CBLV
+
+    internal_nodes = []
+    sub_window_slide_2 = [[leaf_list_encode[i], leaf_list_encode[i+1]] for i in range(len(leaf_list_encode) - 1)]
+    for n in sub_window_slide_2:
+        node0 = tr&n[0]
+        node1 = tr&n[1]
+        ancestor = tr.get_common_ancestor(node0, node1)
+        internal_nodes.append(ancestor.name)
+    return internal_nodes
+
+
+
 # PREPARE EXPORT
 
 col = ['tree']
@@ -394,6 +411,17 @@ full_forest_export = pd.DataFrame(index=design.index, columns=col)
 tree_graph_export = pd.DataFrame(index=design.index, columns=col)
 cblv_export = pd.DataFrame(index=design.index, columns=col)
 tree_arrays = []
+rescale_factors = []
+node_ordering = []
+nodes_ancestor = []
+mutation_positions = []
+
+#listas criadas para calibras os parametros
+number_of_mutantes = []
+time_of_surgimento_mutacao = []
+total_time_of_simulation = []
+
+
 
 col2 = ['total_leaves', 'removed_leaves', 'sampled_leaves', 'total_inf1_leaves', 'total_inf2_leaves',
         'sampled_inf1_leaves', 'sampled_inf2_leaves', 'time_of_simulation', 'nb_trials']
@@ -402,6 +430,8 @@ stats_export = pd.DataFrame(index=design.index, columns=col2)
 # SIMULATE the trees
 FLAG_MUTATION = 0  
 for experiment_id in range(nb_samples):
+    if experiment_id % 1 == 0:
+        print(f'Experiment {experiment_id} out of {nb_samples}')
     params = design.iloc[experiment_id, ]
 
     # simulation
@@ -416,47 +446,68 @@ for experiment_id in range(nb_samples):
 
     # salvar o gráfico laderalizado antes de poda
     
-    
-
-    tr.write(outfile="testando_formato_before.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
     tr.ladderize(direction=1)
+
+    tr.write(outfile="tree_before_removal.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
     
 
     with open("tree_before_removal.txt", "w") as file:
         file.write(tr.get_ascii(show_internal=True, attributes=["name"]))
 
 
-    if tr is not None:
-        full_forest_export.iloc[experiment_id][0] = tr.write(features=['DIST_TO_START', 'stop_reason', 'i_t'],
-                                                        format_root_node=True, format=3)
-    else:
-        full_forest_export.iloc[experiment_id][0] = "NA"
-
     
     tr = remove_certain_leaves(tr, to_remove=lambda node: getattr(node, STOP_REASON) != STOP_SAMPLING)
-
     # salvar o gráfico laderalizado depois da poda
     tr.ladderize(direction=1)
-    tr.write(outfile="testando_formato_after.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
-
-
+    tr.write(outfile="tree_after_removal.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
+    
     with open("tree_after_removal.txt", "w") as file:
-        file.write(tr.get_ascii(show_internal=True, attributes=["name", "DIST_TO_START", "i_t"]))
+        file.write(tr.get_ascii(show_internal=True, attributes=["name"]))
 
-    if tr is not None:
-        forest_export.iloc[experiment_id][0] = tr.write(features=['DIST_TO_START', 'stop_reason', 'i_t'],
-                                                        format_root_node=True, format=3)
+    nodes_it_2 = []
+    for node in tr.traverse("levelorder"):
+        for f in node.features:
+                if getattr(node, f) == 2:
+                    nodes_it_2.append(node.name)
+    
+
+    if len(nodes_it_2) > 1:
+        ancestor = tr.get_common_ancestor(nodes_it_2).name
     else:
-        forest_export.iloc[experiment_id][0] = "NA"
+        ancestor = None
 
     stats_export.iloc[experiment_id] = vector_counter
 
 
-    tuple_tree, _ = phy.encode_into_most_recent(tr, 1)
+    tuple_tree, _, leaf_list = phy.encode_into_most_recent(tr, 1)
+
+    internal_nodes_order = ordering_internal_nodes(leaf_list)
+    
+
+    #ATENÇÃO
+    #No CBLV, a posição do nó da mutação é n+1 da posição do vetor dos nós internos,
+    #já que no vetor CBLV, a primeira entrada é 0
+    if ancestor is not None:
+        mutation_index = internal_nodes_order.index(str(ancestor))
+    else:
+        mutation_index = None
+        
+    
     tree_array = tuple_tree.values.flatten()
     tree_arrays.append(tree_array)
+    rescale_factors.append(_)
+    node_ordering.append(internal_nodes_order)
+    nodes_ancestor.append(ancestor)
+    mutation_positions.append(mutation_index)
+    number_of_mutantes.append(len(nodes_it_2))
+    if mutation_index is not None:
+        time_of_surgimento_mutacao.append(tree_array[mutation_index+1]*_)
+    else:
+        time_of_surgimento_mutacao.append(None)
+    total_time_of_simulation.append(tree_array[501]*_)
 
-    cblv_export.iloc[experiment_id][0] = tuple_tree
+
+    #cblv_export.iloc[experiment_id][0] = tuple_tree
 
     FLAG_MUTATION = 0  
     
@@ -466,11 +517,25 @@ for experiment_id in range(nb_samples):
 #stats_export.to_csv(path_or_buf="subpopulations.txt", sep='\t', index=True, header=True)
 
 tree_matrix = np.array(tree_arrays)
-rescale_factor = np.array(_)
+rescale_factors_matrix = np.array(rescale_factors)
+node_ordering_matrix = np.array(node_ordering)
+ancestor_matrix = np.array(nodes_ancestor)
+mutation_positions_matrix = np.array(mutation_positions)
+number_of_mutantes_matrix = np.array(number_of_mutantes)
+time_of_surgimento_mutacao_matrix = np.array(time_of_surgimento_mutacao)
+total_time_of_simulation_matrix = np.array(total_time_of_simulation)
+
+
 
 save_data = {
     'tree_data': tree_matrix,
-    'rescale_factor': rescale_factor
+    'rescale_factor': rescale_factors_matrix,
+    'internal_nodes_order': node_ordering_matrix,
+    'ancestor': ancestor_matrix,
+    'mutation_positions': mutation_positions_matrix,
+    'number_of_mutantes': number_of_mutantes_matrix,
+    'time_of_surgimento_mutacao': time_of_surgimento_mutacao_matrix,
+    'total_time_of_simulation': total_time_of_simulation_matrix
 }
 
 np.savez_compressed('mutation_deep_learning.npz', **save_data)
@@ -480,7 +545,7 @@ np.savez_compressed('mutation_deep_learning.npz', **save_data)
 #sys.stdout.write(forest_export.to_csv(sep='\t', index=True, header=True))
 
 
-cblv_export.to_csv("cblv_export.csv", index=True, header=True)
+#cblv_export.to_csv("cblv_export.csv", index=True, header=True)
 
 #CBLV
 #tuple_tree, _ = phy.encode_into_most_recent(tr, 1)

@@ -9,7 +9,7 @@ import numpy as np
 
 
 
-n = 1
+n = 10000
 rnought1_list = []
 rnought2_list = []
 r_list = []
@@ -47,16 +47,14 @@ for i in range(n):
     
     
     
-    tree_size = np.random.randint(50, 200)
-    tree_size = 450
+    tree_size = np.random.randint(400, 500)
     tree_list.append(tree_size)
     
 
-    # Possíveis valores: [0.1; 25]
     tr_r11 = np.round(R_nought1 * removal_rate, 3)
     tr_r11_list.append(tr_r11)
 
-   
+
     tr_r22 = np.round((R_nought2 * removal_rate), 3)
     tr_r22_list.append(tr_r22)
 
@@ -67,7 +65,7 @@ for i in range(n):
     # aparentemente, por volta de 0.001 que fica mais realista, ocorre mutação em algumas arvores, outras não
     #tr_r12 = np.round(np.random.uniform(0.001, 0.003), 3) 
     #tr_r12 = 0.002
-    tr_r12 = 0.005
+    tr_r12 = 0.05
     tr_r12_list.append(tr_r12)
 
     fraction = 1 

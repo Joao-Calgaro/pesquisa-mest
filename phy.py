@@ -61,10 +61,10 @@ def add_dist_to_root(tre):
             node.add_feature("dist_to_root", getattr(node.up, "dist_to_root") + node.dist)
             # int_nodes_dist.append(getattr(node.up, "dist_to_root") + node.dist)
             
-        print('nome do nó:')
-        print(node.name)
-        print('distancia')
-        print(getattr(node, "dist_to_root"))
+        #print('nome do nó:')
+        #print(node.name)
+        #print('distancia')
+        #print(getattr(node, "dist_to_root"))
     return None
 
 
@@ -178,7 +178,7 @@ def encode_into_most_recent(tree_input, sampling_proba):
     :return: pd.Dataframe, encoded rescaled input trees in the form of most recent, last column being
      the rescale factor
     """
-
+    leaf_list = []
     def real_polytomies(tre):
         """
         Replaces internal nodes of zero length with real polytomies.
@@ -219,9 +219,11 @@ def encode_into_most_recent(tree_input, sampling_proba):
         dist_to_anc = getattr(feuille, "dist_to_root") - getattr(anc, "dist_to_root")
         return dist_to_anc
 
+
     def encode(anc):
         leaf = get_deepest_not_visited_tip(anc)
         #print(leaf.name)
+        leaf_list.append(leaf.name)
         yield get_dist_to_anc(leaf, anc)
         leaf.visited += 1
         anc = get_not_visited_anc(leaf)
@@ -295,7 +297,7 @@ def encode_into_most_recent(tree_input, sampling_proba):
     for node in tree.traverse():
         setattr(node, "visited", 0)
 
-    name_tree(tree)
+    #name_tree(tree)
 
     add_dist_to_root(tree)
 
@@ -311,7 +313,9 @@ def encode_into_most_recent(tree_input, sampling_proba):
 
     result = refactor_to_final_shape(result, sampling_proba, max_len)
 
-    return result, rescale_factor
+    
+
+    return result, rescale_factor, leaf_list
 
 
 
