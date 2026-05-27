@@ -277,10 +277,11 @@ def encode_into_most_recent(tree_input, sampling_proba):
     # local copy of input tree
     tree = tree_input.copy()
 
-    if len(tree) < 200:
+    '''if len(tree) < 200:
         max_len = 399
     else:
-        max_len = 999
+        max_len = 999'''
+    max_len = 999
 
     # remove the edge above root if there is one
     if len(tree.children) < 2:

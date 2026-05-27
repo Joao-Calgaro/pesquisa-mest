@@ -9,7 +9,7 @@ import numpy as np
 
 
 
-n = 10000
+n = 10
 rnought1_list = []
 rnought2_list = []
 r_list = []
@@ -47,7 +47,7 @@ for i in range(n):
     
     
     
-    tree_size = np.random.randint(400, 500)
+    tree_size = np.random.randint(450, 500)
     tree_list.append(tree_size)
     
 
@@ -65,7 +65,8 @@ for i in range(n):
     # aparentemente, por volta de 0.001 que fica mais realista, ocorre mutação em algumas arvores, outras não
     #tr_r12 = np.round(np.random.uniform(0.001, 0.003), 3) 
     #tr_r12 = 0.002
-    tr_r12 = 0.05
+    #tr_r12 = np.round(np.random.uniform(0.003, 0.007), 4)
+    tr_r12 = 0.005
     tr_r12_list.append(tr_r12)
 
     fraction = 1 
@@ -96,4 +97,4 @@ df = pd.DataFrame({
 #                        'sampling_proba', 'R_nought_1', 'R_nought_2', 'R_nought_verif', 'tree_size', 'x_transmission',
 #                       'fraction_1', 'infectious_period']]
 
-df.to_csv("tabela_BDSS_mutation.txt", sep="\t", index=False)
+df.to_csv("tabela_MP_index_correction_10000.txt", sep="\t", index=False)

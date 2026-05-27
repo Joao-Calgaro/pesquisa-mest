@@ -11,6 +11,7 @@ import phy
 from ete3 import Tree
 import ete3
 
+
 sys.setrecursionlimit(100000)
 
 # import file with a table of parameter values and the maximum time of simulation (large number e.g. 500)
@@ -70,7 +71,7 @@ PROCESSED = 'processed'
 def simulate_bdss_tree_gillespie(tr_r11, tr_r12, tr_r21, tr_r22, removal_r, sampling_p, max_s, max_t,
                                  fraction_1):
     # vou precisar simular R0, gama, a razão do tr22/tr11, tr12, 
-    
+    FLAG_MUTATION = 0
     """
     Simulates the tree evolution with heterogeneous hosts (of type t1 and t2) based on the given transmission rates,
      removal rate, sampling probabilities and number of tips
@@ -135,7 +136,7 @@ def simulate_bdss_tree_gillespie(tr_r11, tr_r12, tr_r21, tr_r22, removal_r, samp
     def transmission(t_donor, t_recipient):
         # t_donor is the type of the donor (1 or 2), t_recipient is the type of the recipient (1 or 2)
         # Quando ocorrer a mutação, t_donor = 1 e t_recipient = 2. Depois disso, não pode mais ocorrer a mutação
-        global FLAG_MUTATION
+        nonlocal FLAG_MUTATION
         
         if t_donor == 1:
             # which leaf will be affected by the event?
@@ -389,9 +390,8 @@ def remove_certain_leaves(tre, to_remove=lambda node: False, state_feature=STOP_
 
     
 
-def ordering_internal_nodes(leaf_list_encode):
+def ordering_internal_nodes(tr, leaf_list_encode):
     # Retorna uma lista dos nós internos na ordem em que estão disposto no CBLV
-
     internal_nodes = []
     sub_window_slide_2 = [[leaf_list_encode[i], leaf_list_encode[i+1]] for i in range(len(leaf_list_encode) - 1)]
     for n in sub_window_slide_2:
@@ -404,7 +404,7 @@ def ordering_internal_nodes(leaf_list_encode):
 
 
 # PREPARE EXPORT
-
+simulacoes_com_erro = []
 col = ['tree']
 forest_export = pd.DataFrame(index=design.index, columns=col)
 full_forest_export = pd.DataFrame(index=design.index, columns=col)
@@ -420,7 +420,7 @@ mutation_positions = []
 number_of_mutantes = []
 time_of_surgimento_mutacao = []
 total_time_of_simulation = []
-
+index_order = []
 
 
 col2 = ['total_leaves', 'removed_leaves', 'sampled_leaves', 'total_inf1_leaves', 'total_inf2_leaves',
@@ -428,11 +428,11 @@ col2 = ['total_leaves', 'removed_leaves', 'sampled_leaves', 'total_inf1_leaves',
 stats_export = pd.DataFrame(index=design.index, columns=col2)
 
 # SIMULATE the trees
-FLAG_MUTATION = 0  
-for experiment_id in range(nb_samples):
+  
+for experiment_id in design.index:
     if experiment_id % 1 == 0:
         print(f'Experiment {experiment_id} out of {nb_samples}')
-    params = design.iloc[experiment_id, ]
+    params = design.loc[experiment_id]
 
     # simulation
     tr, vector_counter = simulate_bdss_tree_gillespie(tr_r11=params[2], tr_r12=params[4], tr_r21=params[5],
@@ -449,26 +449,22 @@ for experiment_id in range(nb_samples):
     tr.ladderize(direction=1)
 
     tr.write(outfile="tree_before_removal.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
-    
-
     with open("tree_before_removal.txt", "w") as file:
         file.write(tr.get_ascii(show_internal=True, attributes=["name"]))
 
 
     
     tr = remove_certain_leaves(tr, to_remove=lambda node: getattr(node, STOP_REASON) != STOP_SAMPLING)
-    # salvar o gráfico laderalizado depois da poda
-    tr.ladderize(direction=1)
-    tr.write(outfile="tree_after_removal.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
+
     
+    tr.write(outfile="tree_after_removal.nw", format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
     with open("tree_after_removal.txt", "w") as file:
         file.write(tr.get_ascii(show_internal=True, attributes=["name"]))
 
     nodes_it_2 = []
     for node in tr.traverse("levelorder"):
-        for f in node.features:
-                if getattr(node, f) == 2:
-                    nodes_it_2.append(node.name)
+        if hasattr(node, I_T) and getattr(node, I_T) == 2:
+            nodes_it_2.append(node.name)
     
 
     if len(nodes_it_2) > 1:
@@ -478,38 +474,49 @@ for experiment_id in range(nb_samples):
 
     stats_export.iloc[experiment_id] = vector_counter
 
-
-    tuple_tree, _, leaf_list = phy.encode_into_most_recent(tr, 1)
-
-    internal_nodes_order = ordering_internal_nodes(leaf_list)
+    try:
+        tuple_tree, rescale_factor, leaf_list = phy.encode_into_most_recent(tr, 1)
+        internal_nodes_order = ordering_internal_nodes(tr, leaf_list)
+    except: 
+        print(f'Erro na árvore {experiment_id}')
+        simulacoes_com_erro.append(experiment_id)
+        tuple_tree = np.zeros(1002)
+        rescale_factor = 0
+        internal_nodes_order = []
+    
     
 
     #ATENÇÃO
     #No CBLV, a posição do nó da mutação é n+1 da posição do vetor dos nós internos,
     #já que no vetor CBLV, a primeira entrada é 0
-    if ancestor is not None:
+    if ancestor is not None and str(ancestor) in internal_nodes_order:
         mutation_index = internal_nodes_order.index(str(ancestor))
     else:
         mutation_index = None
         
     
-    tree_array = tuple_tree.values.flatten()
+    #tree_array = tuple_tree.values.flatten()
+    tree_array = np.asarray(tuple_tree).flatten()
     tree_arrays.append(tree_array)
-    rescale_factors.append(_)
+    rescale_factors.append(rescale_factor)
     node_ordering.append(internal_nodes_order)
     nodes_ancestor.append(ancestor)
+    # Já estou salvando o index do CBLV, e não da lista do nome dos nós
     mutation_positions.append(mutation_index)
     number_of_mutantes.append(len(nodes_it_2))
+    # O tempo do surgimento da mutação e do tempo total de simulação estão normalizado, sendo multiplicados por _
+    #atençao pro mutation_index+1, porque o nó da mutação é o próximo do nó interno, já que o vetor do CBLV começa com 0, e o primeiro nó interno é o nó 1 do vetor do CBLV
     if mutation_index is not None:
-        time_of_surgimento_mutacao.append(tree_array[mutation_index+1]*_)
+        time_of_surgimento_mutacao.append(tree_array[mutation_index+1]*rescale_factor)
     else:
         time_of_surgimento_mutacao.append(None)
-    total_time_of_simulation.append(tree_array[501]*_)
-
+    # É o índice 501 se for o vetor grande, e 201 se for o pequeno
+    total_time_of_simulation.append((tree_array[int(len(tree_array)/2)]*rescale_factor))
+    index_order.append(experiment_id)
 
     #cblv_export.iloc[experiment_id][0] = tuple_tree
 
-    FLAG_MUTATION = 0  
+      
     
 # EXPORT
 # subpopulations to export as csv
@@ -518,14 +525,15 @@ for experiment_id in range(nb_samples):
 
 tree_matrix = np.array(tree_arrays)
 rescale_factors_matrix = np.array(rescale_factors)
-node_ordering_matrix = np.array(node_ordering)
+node_ordering_matrix = np.array(node_ordering, dtype=object)
 ancestor_matrix = np.array(nodes_ancestor)
 mutation_positions_matrix = np.array(mutation_positions)
 number_of_mutantes_matrix = np.array(number_of_mutantes)
 time_of_surgimento_mutacao_matrix = np.array(time_of_surgimento_mutacao)
 total_time_of_simulation_matrix = np.array(total_time_of_simulation)
+index_order_matrix = np.array(index_order)
 
-
+print(f'Simulações com erro: {simulacoes_com_erro}')
 
 save_data = {
     'tree_data': tree_matrix,
@@ -535,10 +543,13 @@ save_data = {
     'mutation_positions': mutation_positions_matrix,
     'number_of_mutantes': number_of_mutantes_matrix,
     'time_of_surgimento_mutacao': time_of_surgimento_mutacao_matrix,
-    'total_time_of_simulation': total_time_of_simulation_matrix
+    'total_time_of_simulation': total_time_of_simulation_matrix,
+    'simulacoes_com_erro': simulacoes_com_erro,
+    'index_order': index_order_matrix,
+    'tabela_parametros': design.values
 }
 
-np.savez_compressed('mutation_deep_learning.npz', **save_data)
+np.savez_compressed('testando_continuidade.npz', **save_data)
 
 # For the pipe : export to stdout
 # printando a árvore  

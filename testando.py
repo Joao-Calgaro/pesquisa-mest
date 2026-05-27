@@ -22,7 +22,7 @@ def inorder_traversal(node):
 
     # binary node
     if len(children) == 2:
-        right, left = children
+        left, right = children   
         yield from inorder_traversal(left)
         yield node
         yield from inorder_traversal(right)
@@ -39,7 +39,7 @@ def inorder_traversal(node):
 
 tr = Tree("tree_after_removal.nw", format=1)
 
-
+print(list(inorder_traversal(tr)))
 
 
 #print(tr.search_nodes(stop_reason="5")[0].name)
@@ -203,7 +203,7 @@ print(tuple_tree1.equals(tuple_tree0))'''
 #    if not node.is_leaf():
 #        if hasattr(node, "i_t"):
 #            print(node.name, node.i_t, node.name)
-
+'''
 nodes_it_2 = [node.name for node in tr.traverse() 
               if hasattr(node, "i_t") and node.i_t == '2']
 #print(nodes_it_2)
@@ -222,7 +222,7 @@ else:
 
 data = np.load('C:\\Users\\JPC\Documents\\MESTRADO\\Projeto\\gillespie-2\\mutation_deep_learning.npz',allow_pickle=True)
 #print(data['tree_data'][0][501] * data['rescale_factor'][0])
-
+'''
 
 
 # 02-04
@@ -237,7 +237,7 @@ data = np.load('C:\\Users\\JPC\Documents\\MESTRADO\\Projeto\\gillespie-2\\mutati
 # multiprocessing
 # embedding
 
-print(data['time_of_surgimento_mutacao'] == None)
+#print(data['time_of_surgimento_mutacao'] == None)
 
 
 #08/04
@@ -248,3 +248,54 @@ print(data['time_of_surgimento_mutacao'] == None)
 # Começar a dissertação: método de simulação, codificação CBLV, 
 # identificar o ancestral comum relacioando com a poda, talvez não seja salvo o nó mutante propriamente, mas os seus descendentes
 # recuperar os parametros de rreferencias dos r0, infectuos time
+
+'''print(tr)
+print(tr.children)
+total_nodes = len(tr.get_descendants()) 
+print(total_nodes)'''
+
+'''for i in range(10):
+    try:
+        if i == 5:
+            tuple_tree, _, leaf_list = phy.encode_into_most_recent(tr, 1)
+        t = 5
+    except:
+        print('saiu erro')
+        continue
+    
+    print('-'*30)
+    print(t)
+    print(i)
+'''
+#data = np.load('C:\\Users\\JPC\\Documents\\MESTRADO\\Projeto\\gillespie-2\\dados_gerados\\001_MP_mutation_deep_learning_mp_10000.npz', allow_pickle=True)
+#testando = data.keys()
+#for i in list(testando):
+#    print(i)
+#print(data['simulacoes_com_erro'])
+
+#15/04
+# implementar o multiprocessing
+# fazer tr12 FIXADO {0.003, 0.005, e 0.007}
+# fixar a proportion {1.5, 3}
+# o que provavelmente está acontecendo é q msm com o tr12 alto, ainda ha mts arvores sem mutações
+# uma das hipoteses é q ocorre a mutação e q é retirada na poda. Vamos conferir a quantidade de mutantes pré-poda
+#
+#para tr_12 0.05, a prof acredita que dentre as 169 arvores que nao ocorreu mutação, na vdd ocorreu mutação, olhar antes da poda para ver 
+# 
+#                    tr: 0.003   0.005   0.007
+#   propotion   1.5     OK        OK        ok
+#               2.2     OK      ok      ok
+#               3.0  OK     ok
+
+
+# 22-04 
+# o y do grid com a proporção tem q ser normalziado 
+# inverter a ordem do grid na proporção, de 0 pra [1,10) para < 10
+# confirmar se o grid do tempo relativo, quando a tr12 é baixa, resultara em menos arvores mutantes, 
+#assim, a área dos histogramas são diferentes, ver a versão normalizada, onde dividimos peloa quantidade total de arvores mutantes de cada um
+################
+#1) ESCREVER !!!
+#2) Testar a rede neural, o parâmetro q ele estimar está normalziado, temos que multiplicar pelo reascale factor o infectuos time
+#3) dai treinar a nossa
+#4) por enquanto, achar os parametros R_0_1, infectuos time and a taxa relativa (novas árvores 100.000)
+#5) em um segundo momento!, encontrar o momento da mutação
