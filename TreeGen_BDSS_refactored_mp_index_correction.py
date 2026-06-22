@@ -11,7 +11,9 @@ import phy
 from ete3 import Tree
 import ete3
 from multiprocessing import Pool, cpu_count
-
+import os
+import pickle
+from datetime import datetime
 
 sys.setrecursionlimit(100000)
 
@@ -399,7 +401,7 @@ def ordering_internal_nodes(tr, leaf_list_encode):
         node0 = tr&n[0]
         node1 = tr&n[1]
         ancestor = tr.get_common_ancestor(node0, node1)
-        internal_nodes.append(ancestor.name)
+        internal_nodes.append(ancestor)
     return internal_nodes
 
 
@@ -433,27 +435,56 @@ def run_experiment(experiment_id):
         to_remove=lambda node: getattr(node, STOP_REASON) != STOP_SAMPLING
     )
 
+
+
     nodes_it_2 = []
     for node in tr.traverse("levelorder"):
         if hasattr(node, I_T) and getattr(node, I_T) == 2:
-            nodes_it_2.append(node.name)
+            nodes_it_2.append(node)
 
     if len(nodes_it_2) > 1:
-        ancestor = tr.get_common_ancestor(nodes_it_2).name
+        ancestor_node = tr.get_common_ancestor(nodes_it_2)
     else:
-        ancestor = None
+        ancestor_node = None
+
+
 
     try:
         tuple_tree, rescale_factor, leaf_list = phy.encode_into_most_recent(tr, 1)
+
+        
         internal_nodes_order = ordering_internal_nodes(tr, leaf_list)
     except:
         return {
             "experiment_id": experiment_id,
             "error": True
         }
+    
+    MAX_LEAVES = 501
+    MAX_INTERNALS = MAX_LEAVES - 1  
 
-    if ancestor is not None and str(ancestor) in internal_nodes_order:
-        mutation_index = internal_nodes_order.index(str(ancestor))
+    internal_mask = np.zeros(MAX_INTERNALS, dtype=np.uint8)
+    leaf_mask = np.zeros(MAX_LEAVES + 1, dtype=np.uint8) # + 1 para mascarar o sampling probability
+
+    internal_mask[:len(internal_nodes_order)] = [
+        int(node in nodes_it_2) for node in internal_nodes_order
+    ]
+
+    mutant_leaf_names = {
+    node.name
+    for node in nodes_it_2
+    if node.is_leaf()
+    }
+    
+    leaf_mask[:len(leaf_list)] = [
+        int(leaf in mutant_leaf_names) for leaf in leaf_list
+    ]
+
+    mutation_mask = np.concatenate((internal_mask, leaf_mask))
+        
+
+    if ancestor_node is not None and ancestor_node in internal_nodes_order:
+        mutation_index = internal_nodes_order.index(ancestor_node)
     else:
         mutation_index = None
 
@@ -466,18 +497,24 @@ def run_experiment(experiment_id):
 
     total_time = tree_array[int(len(tree_array) / 2)] * rescale_factor
 
-    return {
+
+
+    
+    result = {
         "experiment_id": experiment_id,
         "tree_array": tree_array,
         "rescale_factor": rescale_factor,
-        "internal_nodes_order": internal_nodes_order,
-        "ancestor": ancestor,
+        "internal_nodes_order": [n.name for n in internal_nodes_order],
+        "ancestor": ancestor_node.name if ancestor_node is not None else None,
         "mutation_position": mutation_index,
         "number_of_mutantes": len(nodes_it_2),
         "time_of_surgimento_mutacao": time_mutation,
         "total_time_of_simulation": total_time,
-        "stats": vector_counter
+        "stats": vector_counter,
+        "mask": mutation_mask
     }
+    
+    return result
 
 if __name__ == "__main__":
     inputs = list(design.index)
@@ -485,6 +522,7 @@ if __name__ == "__main__":
     with Pool(cpu_count()) as pool:
         results = pool.map(run_experiment, inputs)
 
+    print("After pool.map()")
     
     n = len(design.index)
 
@@ -496,6 +534,7 @@ if __name__ == "__main__":
     number_of_mutantes = [None] * n
     time_of_surgimento_mutacao = [None] * n
     total_time_of_simulation = [None] * n
+    mutation_masks = np.zeros((n, 1002), dtype=np.uint8)
     simulacoes_com_erro = []
 
     for r in results:
@@ -505,7 +544,7 @@ if __name__ == "__main__":
 
         # erro na simulação
         if "error" in r:
-            simulacoes_com_erro.append(r["error"])
+            simulacoes_com_erro.append(r["experiment_id"])
             tree_arrays[idx, :] = np.zeros(1002, dtype=np.float32)
             rescale_factors[idx] = np.nan
             node_ordering[idx] = np.nan
@@ -514,6 +553,7 @@ if __name__ == "__main__":
             number_of_mutantes[idx] = np.nan
             time_of_surgimento_mutacao[idx] = np.nan
             total_time_of_simulation[idx] = np.nan
+            mutation_masks[idx, :] = np.zeros(1002, dtype=np.uint8)
         else:
             # manter alinhamento exato
             tree_arrays[idx, :] = r["tree_array"]
@@ -524,25 +564,60 @@ if __name__ == "__main__":
             number_of_mutantes[idx] = r["number_of_mutantes"]
             time_of_surgimento_mutacao[idx] = r["time_of_surgimento_mutacao"]
             total_time_of_simulation[idx] = r["total_time_of_simulation"]
+            mutation_masks[idx, :] = r["mask"]
 
-    save_data = {
-        'tree_data': tree_arrays,
-        'rescale_factor': np.array(rescale_factors, dtype=np.float64),
-        'internal_nodes_order': np.array(node_ordering, dtype=object),
-        'ancestor': np.array(nodes_ancestor, dtype=object),
-        'mutation_positions': np.array(mutation_positions, dtype=np.float64),
-        'number_of_mutantes': np.array(number_of_mutantes, dtype=np.float64),
-        'time_of_surgimento_mutacao': np.array(time_of_surgimento_mutacao, dtype=np.float64),
-        'total_time_of_simulation': np.array(total_time_of_simulation, dtype=np.float64),
-        'simulacoes_com_erro': np.array(simulacoes_com_erro, dtype=object),
-        'tabela_parametros': design.values,
-        'index_order': np.array(design.index)
-    }
+    print("Pool finished")
+    print("Building arrays finished")
 
-    np.savez_compressed(
-        "mutation_deep_learning_mp_10000.npz",
-        **save_data
-    )
+    output_dir = "testando_com_100_arvores"
+    os.makedirs(output_dir, exist_ok=True)
 
-    print("Finalizado com sucesso.")
-    print(f"Simulações com erro: {simulacoes_com_erro}")
+    print("Saving tree_data")
+    np.save(os.path.join(output_dir, "tree_data.npy"), tree_arrays.astype(np.float32))
+
+    print("Saving mutation_masks")
+    np.save(os.path.join(output_dir, "mutation_masks.npy"), mutation_masks.astype(np.uint8))
+
+    print("Saving rescale_factor")
+    np.save(os.path.join(output_dir, "rescale_factor.npy"),
+            np.array(rescale_factors, dtype=np.float32))
+
+    print("Saving mutation_positions")
+    np.save(os.path.join(output_dir, "mutation_positions.npy"),
+            np.array(mutation_positions, dtype=np.float32))
+
+    print("Saving number_of_mutantes")
+    np.save(os.path.join(output_dir, "number_of_mutantes.npy"),
+            np.array(number_of_mutantes, dtype=np.float32))
+
+    print("Saving time_of_surgimento_mutacao")
+    np.save(os.path.join(output_dir, "time_of_surgimento_mutacao.npy"),
+            np.array(time_of_surgimento_mutacao, dtype=np.float32))
+
+    print("Saving total_time_of_simulation")
+    np.save(os.path.join(output_dir, "total_time_of_simulation.npy"),
+            np.array(total_time_of_simulation, dtype=np.float32))
+
+    print("Saving tabela_parametros")
+    np.save(os.path.join(output_dir, "tabela_parametros.npy"),
+            design.values)
+
+    print("Saving index_order")
+    np.save(os.path.join(output_dir, "index_order.npy"),
+            np.array(design.index))
+
+    print("Saving internal_nodes_order")
+    with open(os.path.join(output_dir, "internal_nodes_order.pkl"), "wb") as f:
+        pickle.dump(node_ordering, f)
+
+    print("Saving ancestor")
+    with open(os.path.join(output_dir, "ancestor.pkl"), "wb") as f:
+        pickle.dump(nodes_ancestor, f)
+
+    print("Saving simulacoes_com_erro")
+    with open(os.path.join(output_dir, "simulacoes_com_erro.pkl"), "wb") as f:
+        pickle.dump(simulacoes_com_erro, f)
+
+    print("ALL SAVING FINISHED")
+
+print(datetime.now())

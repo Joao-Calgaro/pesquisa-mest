@@ -39,7 +39,7 @@ def inorder_traversal(node):
 
 tr = Tree("tree_after_removal.nw", format=1)
 
-print(list(inorder_traversal(tr)))
+#print(list(inorder_traversal(tr)))
 
 
 #print(tr.search_nodes(stop_reason="5")[0].name)
@@ -299,3 +299,16 @@ print(total_nodes)'''
 #3) dai treinar a nossa
 #4) por enquanto, achar os parametros R_0_1, infectuos time and a taxa relativa (novas árvores 100.000)
 #5) em um segundo momento!, encontrar o momento da mutação
+
+data = np.load('C:\\Users\\JPC\Documents\\MESTRADO\\Projeto\\gillespie-2\\mutation_deep_learning_mp_10000.npz',allow_pickle=True)
+
+print(type(data['ancestor'][0]))
+print((data['simulacoes_com_erro']))
+
+for i in ['asdsad']:
+    print(i)
+
+
+
+# 17-06
+# Mudar o nome do proportion_tr11_tr22

@@ -9,7 +9,7 @@ import numpy as np
 
 
 
-n = 10
+n = 100
 rnought1_list = []
 rnought2_list = []
 r_list = []
@@ -97,4 +97,6 @@ df = pd.DataFrame({
 #                        'sampling_proba', 'R_nought_1', 'R_nought_2', 'R_nought_verif', 'tree_size', 'x_transmission',
 #                       'fraction_1', 'infectious_period']]
 
-df.to_csv("tabela_MP_index_correction_10000.txt", sep="\t", index=False)
+n = 0
+df.to_csv(f"tabela_MP_1.txt", sep="\t", index=False)
+#experiment 9590
