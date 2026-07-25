@@ -435,6 +435,8 @@ def run_experiment(experiment_id):
         to_remove=lambda node: getattr(node, STOP_REASON) != STOP_SAMPLING
     )
 
+    newick_after_removal = tr.write(format=3, features=['DIST_TO_START', 'stop_reason', 'i_t'], format_root_node=True)
+
 
 
     nodes_it_2 = []
@@ -446,8 +448,6 @@ def run_experiment(experiment_id):
         ancestor_node = tr.get_common_ancestor(nodes_it_2)
     else:
         ancestor_node = None
-
-
 
     try:
         tuple_tree, rescale_factor, leaf_list = phy.encode_into_most_recent(tr, 1)
@@ -511,7 +511,8 @@ def run_experiment(experiment_id):
         "time_of_surgimento_mutacao": time_mutation,
         "total_time_of_simulation": total_time,
         "stats": vector_counter,
-        "mask": mutation_mask
+        "mask": mutation_mask,
+        "newick": newick_after_removal
     }
     
     return result
@@ -536,6 +537,7 @@ if __name__ == "__main__":
     total_time_of_simulation = [None] * n
     mutation_masks = np.zeros((n, 1002), dtype=np.uint8)
     simulacoes_com_erro = []
+    trees_newick = [""] * n
 
     for r in results:
 
@@ -554,6 +556,7 @@ if __name__ == "__main__":
             time_of_surgimento_mutacao[idx] = np.nan
             total_time_of_simulation[idx] = np.nan
             mutation_masks[idx, :] = np.zeros(1002, dtype=np.uint8)
+            trees_newick[idx] = r.get("newick", "") or ""
         else:
             # manter alinhamento exato
             tree_arrays[idx, :] = r["tree_array"]
@@ -565,11 +568,12 @@ if __name__ == "__main__":
             time_of_surgimento_mutacao[idx] = r["time_of_surgimento_mutacao"]
             total_time_of_simulation[idx] = r["total_time_of_simulation"]
             mutation_masks[idx, :] = r["mask"]
+            trees_newick[idx] = r.get("newick", "") or ""
 
     print("Pool finished")
     print("Building arrays finished")
 
-    output_dir = "testando_com_100_arvores"
+    output_dir = "mutation_dataset_100k_phyloCNN"
     os.makedirs(output_dir, exist_ok=True)
 
     print("Saving tree_data")
@@ -605,6 +609,11 @@ if __name__ == "__main__":
     print("Saving index_order")
     np.save(os.path.join(output_dir, "index_order.npy"),
             np.array(design.index))
+    
+    print("Saving trees_after_removal")
+    with open(os.path.join(output_dir, "trees_after_removal.nwk"), "w") as f:
+        for newick_str in trees_newick:
+            f.write(newick_str.strip() + "\n")
 
     print("Saving internal_nodes_order")
     with open(os.path.join(output_dir, "internal_nodes_order.pkl"), "wb") as f:

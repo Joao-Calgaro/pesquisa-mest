@@ -18,7 +18,7 @@ for idx, file in enumerate(arquivos):
     col = idx % 3
     ax = axes[row, col]
 
-    data = np.load(f'C:\\Users\\JPC\\Documents\\MESTRADO\\Projeto\\gillespie-2\\histograms\\grid\\{file}', allow_pickle=True)
+    data = np.load(f'C:\\Users\\JPC\\Documents\\MESTRADO\\Projeto\\gillespie-2\\histograms\\grid\\data_grid\\{file}', allow_pickle=True)
 
     
     #arr = data['number_of_mutantes'][(data['number_of_mutantes'] >=10)].ravel()
