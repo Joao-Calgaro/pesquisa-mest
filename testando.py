@@ -38,6 +38,16 @@ def inorder_traversal(node):
     raise ValueError("Tree is not binary. Resolve polytomies first.")
 
 tr = Tree("tree_after_removal.nw", format=1)
+for node in tr.traverse():
+    if not node.is_leaf():
+        
+        print(node.name)
+        print(node.features)
+        print(getattr(node, "i_t", 0))
+
+            
+    
+
 
 #print(list(inorder_traversal(tr)))
 
@@ -299,14 +309,14 @@ print(total_nodes)'''
 #3) dai treinar a nossa
 #4) por enquanto, achar os parametros R_0_1, infectuos time and a taxa relativa (novas árvores 100.000)
 #5) em um segundo momento!, encontrar o momento da mutação
-
+'''
 data = np.load('C:\\Users\\JPC\Documents\\MESTRADO\\Projeto\\gillespie-2\\mutation_deep_learning_mp_10000.npz',allow_pickle=True)
 
 print(type(data['ancestor'][0]))
 print((data['simulacoes_com_erro']))
 
 for i in ['asdsad']:
-    print(i)
+    print(i)'''
 
 
 

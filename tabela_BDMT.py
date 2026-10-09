@@ -9,7 +9,7 @@ import numpy as np
 
 
 
-n = 100000
+n = 1000
 rnought1_list = []
 rnought2_list = []
 r_list = []
@@ -98,4 +98,4 @@ df = pd.DataFrame({
 #                       'fraction_1', 'infectious_period']]
 
 
-df.to_csv(f"tabela_100k_phyloCNN.txt", sep="\t", index=False)
+df.to_csv(f"tabela_1k_phyloCNN.txt", sep="\t", index=False)

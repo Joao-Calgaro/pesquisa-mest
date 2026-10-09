@@ -38,12 +38,12 @@ for idx, file in enumerate(arquivos):
     if col == 0: 
         ax.set_ylabel(titulo_linhas[row], fontsize=10)
 
-salvar = input('Deseja salvar? (y): ')
+salvar = 'y' #input('Deseja salvar? (y): ')
 if salvar == 'y':
     #caminho = input("Nome para salvar: ")
-    caminho = 'proporcao_mutacao_grid'
+    caminho = 'proporcao_mutacao_detalhada_grid'
     plt.tight_layout()
-    plt.savefig(f'histograms\\grid\\{caminho}.png', dpi=300)
-    plt.savefig(f'histograms\\grid\\{caminho}.pdf', dpi=300)
+    plt.savefig(f'histograms\\grid\\plots_grid\\{caminho}.png', dpi=300)
+    plt.savefig(f'histograms\\grid\\plots_grid\\{caminho}.pdf', dpi=300)
 plt.show()
 plt.tight_layout()

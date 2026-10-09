@@ -573,7 +573,7 @@ if __name__ == "__main__":
     print("Pool finished")
     print("Building arrays finished")
 
-    output_dir = "mutation_dataset_100k_phyloCNN"
+    output_dir = "mutation_dataset_1k_phyloCNN_aline"
     os.makedirs(output_dir, exist_ok=True)
 
     print("Saving tree_data")

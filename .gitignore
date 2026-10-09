@@ -14,7 +14,6 @@ mutation_dataset_100k_phyloCNN/
 neural_networks_dot_keras/
 phyloCNN-main/CI/
 phyloCNN-main/Empirical_Datasets/
-phyloCNN-main/Encoding/
 phyloCNN-main/Model_adequacy/
 phyloCNN-main/Simulations/
 phyloCNN-main/Test_Sets/
@@ -25,3 +24,4 @@ phyloCNN-main/README.md
 Vinicius/
 .venv/
 .vscode/
+/mutation_dataset_100k_phyloCNN/split_trees_encoded_inorder/encoded_inorder_v0.csv

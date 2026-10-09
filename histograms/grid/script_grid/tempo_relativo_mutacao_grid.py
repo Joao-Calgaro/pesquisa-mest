@@ -18,7 +18,7 @@ for idx, file in enumerate(arquivos):
     col = idx % 3
     ax = axes[row, col]
 
-    data = np.load(f'C:\\Users\\JPC\\Documents\\MESTRADO\\Projeto\\gillespie-2\\histograms\\grid\\{file}', allow_pickle=True)
+    data = np.load(f'C:\\Users\\JPC\\Documents\\MESTRADO\\Projeto\\gillespie-2\\histograms\\grid\\data_grid\\{file}', allow_pickle=True)
 
     
     #arr = data['number_of_mutantes'][(data['number_of_mutantes'] >=10)].ravel()
@@ -27,7 +27,8 @@ for idx, file in enumerate(arquivos):
     result = [x/y for x,y in zip(tempo_mutacao, tempo_total) if x != None]
     #arr = [sum(data['number_of_mutantes'] > 0), sum(data['number_of_mutantes'] == 0)]
 
-    sns.histplot(result, bins=30, kde=False, ax=ax) #Caso queira a proporção, descomentar essa linha, stat='probability')
+    sns.histplot(result, bins=30, kde=False, ax=ax, stat='probability') #Caso queira a proporção, descomentar essa linha, stat='probability')
+
     #sns.barplot(x=['Árvores com mutantes', 'Árvores sem mutantes'], y=arr, ax=ax, palette=['steelblue', 'green'])
     ax.tick_params(labelsize=7)
 
@@ -38,7 +39,7 @@ for idx, file in enumerate(arquivos):
     if col == 0: 
         ax.set_ylabel(titulo_linhas[row], fontsize=10)
 
-salvar = input('Deseja salvar? (y): ')
+salvar = 'n' #input('Deseja salvar? (y): ')
 if salvar == 'y':
     #caminho = input("Nome para salvar: ")
     caminho = 'proporcao_mutacao_grid'
